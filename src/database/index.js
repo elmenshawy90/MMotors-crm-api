@@ -18,6 +18,7 @@ import Permission from '../models/Permission.js';
 import PageAccess from '../models/PageAccess.js';
 import KnowledgeCategory from '../models/KnowledgeCategory.js';
 import KnowledgeItem from '../models/KnowledgeItem.js';
+import Lead from '../models/Lead.js';
 
 // Ensure all models are imported before defining associations
 
@@ -59,10 +60,12 @@ const defineAssociations = () => {
   Contact.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
   Contact.hasMany(Vehicle, { foreignKey: 'owner_id', as: 'ownedVehicles' });
   Contact.hasMany(Appointment, { foreignKey: 'contact_id', as: 'appointments' });
+  Contact.hasMany(PhoneCall, { foreignKey: 'contact_id', as: 'phoneCalls' });
 
   // PhoneCall associations
   PhoneCall.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
   PhoneCall.belongsTo(Branch, { foreignKey: 'branch_id', as: 'branch' });
+  PhoneCall.belongsTo(Contact, { foreignKey: 'contact_id', as: 'contact' });
 
   // Helpdesk associations
   Helpdesk.belongsTo(User, { foreignKey: 'created_by', as: 'creator' });
@@ -108,6 +111,17 @@ const defineAssociations = () => {
   KnowledgeCategory.belongsTo(KnowledgeCategory, { foreignKey: 'parent_id', as: 'parent' });
   KnowledgeCategory.hasMany(KnowledgeItem, { foreignKey: 'category_id', as: 'items' });
   KnowledgeItem.belongsTo(KnowledgeCategory, { foreignKey: 'category_id', as: 'category' });
+
+  // Lead associations
+  Lead.belongsTo(Branch,  { foreignKey: 'branch_id',   as: 'branch'       });
+  Lead.belongsTo(Contact, { foreignKey: 'contact_id',  as: 'contact'      });
+  Lead.belongsTo(Vehicle, { foreignKey: 'vehicle_id',  as: 'vehicle'      });
+  Lead.belongsTo(User,    { foreignKey: 'assigned_to', as: 'assignedUser' });
+  Lead.belongsTo(User,    { foreignKey: 'created_by',  as: 'creator'      });
+  Branch.hasMany(Lead,    { foreignKey: 'branch_id',   as: 'leads'        });
+  Contact.hasMany(Lead,   { foreignKey: 'contact_id',  as: 'leads'        });
+  User.hasMany(Lead,      { foreignKey: 'assigned_to', as: 'assignedLeads'});
+  User.hasMany(Lead,      { foreignKey: 'created_by',  as: 'createdLeads' });
 };
 
 const initializeDatabase = async () => {

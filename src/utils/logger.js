@@ -27,14 +27,11 @@ const consoleFormat = winston.format.combine(
   })
 );
 
-const transports = [
-  new winston.transports.Console({
-    format: config.env === 'development' ? consoleFormat : logFormat
-  })
-];
-
-if (config.env === 'development') {
-  transports.push(
+const logger = winston.createLogger({
+  level: config.logging.level,
+  format: logFormat,
+  defaultMeta: { service: 'car-branch-manager' },
+  transports: [
     // Write all logs to combined.log
     new winston.transports.File({
       filename: path.join(logDir, 'combined.log'),
@@ -48,14 +45,14 @@ if (config.env === 'development') {
       maxsize: 5242880, // 5MB
       maxFiles: 5
     })
-  );
-}
-
-const logger = winston.createLogger({
-  level: config.logging.level,
-  format: logFormat,
-  defaultMeta: { service: 'car-branch-manager' },
-  transports
+  ]
 });
+
+// Add console transport in development
+if (config.env === 'development') {
+  logger.add(new winston.transports.Console({
+    format: consoleFormat
+  }));
+}
 
 export default logger;

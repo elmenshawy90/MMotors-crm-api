@@ -1,4 +1,3 @@
-import { fileURLToPath } from 'url';
 import initializeDatabase from './index.js';
 import { hashPassword } from '../utils/helpers.js';
 import User from '../models/User.js';
@@ -121,6 +120,6 @@ const seedDatabase = async () => {
 export { seedDatabase };
 
 // Run directly if this file is executed
-if (fileURLToPath(import.meta.url) === process.argv[1]) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   seedDatabase();
 }

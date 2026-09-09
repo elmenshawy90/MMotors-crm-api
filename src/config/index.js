@@ -13,8 +13,7 @@ export const config = {
     password: process.env.DB_PASSWORD,
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT, 10) || 5432,
-    dialect: process.env.DB_DIALECT || 'postgres',
-    ssl: process.env.DB_SSL === 'true'
+    dialect: process.env.DB_DIALECT || 'postgres'
   },
   
   jwt: {
@@ -33,7 +32,7 @@ export const config = {
   cors: {
     origin: process.env.CORS_ORIGIN 
       ? process.env.CORS_ORIGIN.split(',') 
-      : ['https://crm-api.modernmotorseg.com', 'http://localhost:5173', 'http://localhost:8080']
+      : ['https://api.al-brisha.com','http://localhost:5173']
   },
   
   logging: {

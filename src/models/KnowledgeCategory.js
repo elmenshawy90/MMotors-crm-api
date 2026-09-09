@@ -56,6 +56,27 @@ const KnowledgeCategory = sequelize.define('KnowledgeCategory', {
       model: 'users',
       key: 'id'
     }
+  },
+  // Branch-specific fields
+  branch_address: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  branch_working_hours_day: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  branch_working_hours_night: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  branch_manager: {
+    type: DataTypes.STRING(200),
+    allowNull: true
+  },
+  branch_phone: {
+    type: DataTypes.STRING(20),
+    allowNull: true
   }
 }, {
   tableName: 'knowledge_categories',

@@ -78,7 +78,20 @@ class KnowledgeController {
 
       const itemCount = await KnowledgeItem.count({ where: { category_id: id } });
 
-      res.json({ success: true, data: { ...category.toJSON(), item_count: itemCount } });
+      const categoryData = category.toJSON();
+      
+      // Log branch-specific fields for debugging
+      logger.info('Category data:', {
+        id: categoryData.id,
+        name: categoryData.name,
+        branch_address: categoryData.branch_address,
+        branch_working_hours_day: categoryData.branch_working_hours_day,
+        branch_working_hours_night: categoryData.branch_working_hours_night,
+        branch_manager: categoryData.branch_manager,
+        branch_phone: categoryData.branch_phone
+      });
+
+      res.json({ success: true, data: { ...categoryData, item_count: itemCount } });
     } catch (error) {
       logger.error('Get knowledge category error:', error);
       next(error);
@@ -292,7 +305,7 @@ class KnowledgeController {
             ]
           },
           include: [{ model: KnowledgeCategory, as: 'category', attributes: ['id', 'name', 'icon', 'color'] }],
-          limit: 20
+          limit: 40
         })
       ]);
 

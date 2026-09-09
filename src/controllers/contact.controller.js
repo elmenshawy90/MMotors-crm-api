@@ -32,10 +32,10 @@ class ContactController {
       }
       
       if (search) {
-        const fullName = sequelize.literal(`CONCAT(first_name, ' ', last_name)`);
+        const fullName = sequelize.literal(`CONCAT("Contact"."first_name", ' ', "Contact"."last_name")`);
         where[Op.or] = [
-          { first_name: { [Op.iLike]: `%${search}%` } },
-          { last_name: { [Op.iLike]: `%${search}%` } },
+          { '$Contact.first_name$': { [Op.iLike]: `%${search}%` } },
+          { '$Contact.last_name$': { [Op.iLike]: `%${search}%` } },
           { email: { [Op.iLike]: `%${search}%` } },
           { phone: { [Op.iLike]: `%${search}%` } },
           { company: { [Op.iLike]: `%${search}%` } },
@@ -46,7 +46,10 @@ class ContactController {
       let order = [['created_at', 'DESC']];
       
       if (sort_by === 'name') {
-        order = [['first_name', 'ASC'], ['last_name', 'ASC']];
+        order = [
+          [sequelize.col('Contact.first_name'), 'ASC'],
+          [sequelize.col('Contact.last_name'), 'ASC']
+        ];
       } else if (sort_by === 'recent') {
         order = [['since', 'DESC']];
       }
@@ -244,8 +247,9 @@ class ContactController {
         Fleet: await Contact.count({ where: { ...where, type: 'Fleet' } }),
       };
       
-      const contacts = await Contact.findAll({ where, attributes: ['vehicles'] });
-      const totalVehicles = contacts.reduce((sum, c) => sum + (c.vehicles?.length || 0), 0);
+      const totalVehicles = await Vehicle.count({
+        where: branch_id && branch_id !== 'all' ? { branch_id } : {}
+      });
       
       const totalAppointments = await Appointment.count({
         where: branch_id && branch_id !== 'all' ? { branch_id } : {}
@@ -254,7 +258,7 @@ class ContactController {
       const openTickets = await Helpdesk.count({
         where: {
           ...(branch_id && branch_id !== 'all' ? { branch_id } : {}),
-          stage: { [Op.ne]: 'Solved' }
+          status: { [Op.notIn]: ['resolved', 'closed'] }
         }
       });
       
@@ -545,13 +549,13 @@ class ContactController {
           }
         ],
         order: [['date', 'DESC']],
-        limit: 20
+        limit: 40
       });
       
       const tickets = await Helpdesk.findAll({
         where: { contact_id: id },
         order: [['created_at', 'DESC']],
-        limit: 20
+        limit: 40
       });
       
       res.json({

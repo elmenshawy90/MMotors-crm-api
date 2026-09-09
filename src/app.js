@@ -29,7 +29,14 @@ import roleRoutes from './routes/role.routes.js';
 import permissionRoutes from './routes/permission.routes.js';
 import pageAccessRoutes from './routes/pageAccess.routes.js';
 import knowledgeRoutes from './routes/knowledge.routes.js';
+import leadRoutes from './routes/lead.routes.js';
 import systemRoutes from './routes/system.routes.js';
+import uploadRoutes from './routes/upload.routes.js';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config();
 
@@ -103,7 +110,12 @@ app.use('/api/roles', roleRoutes);
 app.use('/api/permissions', permissionRoutes);
 app.use('/api/page-access', pageAccessRoutes);
 app.use('/api/knowledge', knowledgeRoutes);
+app.use('/api/leads', leadRoutes);
 app.use('/api/system', systemRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// Serve uploaded files as static
+app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 
 // 404 handler
 app.use(notFoundHandler);

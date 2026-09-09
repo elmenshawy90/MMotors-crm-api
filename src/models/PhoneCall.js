@@ -77,6 +77,16 @@ const PhoneCall = sequelize.define('PhoneCall', {
     type: DataTypes.DATE,
     allowNull: true
   },
+  follow_up_date_2: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Auto: +1 day from follow_up_date'
+  },
+  follow_up_date_3: {
+    type: DataTypes.DATE,
+    allowNull: true,
+    comment: 'Auto: +3 days from follow_up_date'
+  },
   recording_url: {
     type: DataTypes.STRING(500),
     allowNull: true

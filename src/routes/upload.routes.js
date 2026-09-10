@@ -9,8 +9,22 @@ const router = express.Router();
 router.use(authenticate);
 
 // ── Storage config ─────────────────────────────────────────────────────────
-const UPLOAD_DIR = path.resolve('uploads/knowledge');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// /var/task is read-only on Lambda — only /tmp is writable.
+// UPLOAD_PATH env overrides; default to /tmp on Lambda, ./uploads elsewhere.
+const UPLOAD_DIR = process.env.UPLOAD_PATH
+  ? path.resolve(process.env.UPLOAD_PATH, 'knowledge')
+  : process.env.AWS_LAMBDA_FUNCTION_NAME
+    ? '/tmp/uploads/knowledge'
+    : path.resolve('uploads/knowledge');
+
+let uploadReady = false;
+try {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  fs.accessSync(UPLOAD_DIR, fs.constants.W_OK);
+  uploadReady = true;
+} catch (err) {
+  logger.warn(`Upload directory not writable (${UPLOAD_DIR}), file uploads will fail: ${err.message}`);
+}
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
@@ -38,7 +52,12 @@ const upload = multer({
 });
 
 // POST /api/upload/knowledge  →  { url, filename, size, mimetype }
-router.post('/knowledge', upload.single('file'), (req, res) => {
+router.post('/knowledge', (req, res, next) => {
+  if (!uploadReady) {
+    return res.status(503).json({ success: false, message: 'File uploads are not available on this instance' });
+  }
+  next();
+}, upload.single('file'), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ success: false, message: 'No file uploaded' });
   }

@@ -13,7 +13,8 @@ export const config = {
     password: process.env.DB_PASSWORD,
     host: process.env.DB_HOST,
     port: parseInt(process.env.DB_PORT, 10) || 5432,
-    dialect: process.env.DB_DIALECT || 'postgres'
+    dialect: process.env.DB_DIALECT || 'postgres',
+    ssl: process.env.DB_SSL === 'true'
   },
   
   jwt: {

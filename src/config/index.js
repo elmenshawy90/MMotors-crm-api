@@ -32,8 +32,8 @@ export const config = {
   
   cors: {
     origin: process.env.CORS_ORIGIN 
-      ? process.env.CORS_ORIGIN.split(',') 
-      : ['https://api.al-brisha.com','http://localhost:5173']
+      ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
+      : ['https://crm.modernmotorseg.com', 'https://api.al-brisha.com', 'http://localhost:5173', 'http://localhost:8080']
   },
   
   logging: {

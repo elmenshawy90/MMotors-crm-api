@@ -82,14 +82,19 @@ app.use(helmet({
 }));
 
 
-//  2 — CORS 
+//  2 — CORS
+// app.options يجب أن يكون أول شيء — الـ preflight لا يحمل X-API-Key
 
-app.use(cors({
+const corsOptions = {
   origin: config.cors.origin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key']
-}));
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
+  optionsSuccessStatus: 200
+};
+
+app.options('*', cors(corsOptions));  // رد فوري على كل preflight قبل أي middleware
+app.use(cors(corsOptions));
 
 
 //  3 — API Key 

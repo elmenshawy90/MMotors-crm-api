@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import config from '../config/index.js';
+import { isBlacklisted } from './tokenBlacklist.js';
 
 export const authenticate = async (req, res, next) => {
   try {
@@ -14,6 +15,13 @@ export const authenticate = async (req, res, next) => {
     }
     
     const token = authHeader.substring(7);
+
+    if (isBlacklisted(token)) {
+      return res.status(401).json({
+        success: false,
+        message: 'Token has been revoked'
+      });
+    }
     
     try {
       const decoded = jwt.verify(token, config.jwt.secret);
@@ -36,7 +44,9 @@ export const authenticate = async (req, res, next) => {
           message: 'User account is not active'
         });
       }
-      
+
+      req.token = token;
+      req.tokenDecoded = decoded;
       req.user = user;
       next();
     } catch (jwtError) {

@@ -2,6 +2,7 @@ import User from '../models/User.js';
 import { hashPassword, comparePassword, generateToken, generateRefreshToken, verifyToken } from '../utils/helpers.js';
 import config from '../config/index.js';
 import logger from '../utils/logger.js';
+import { blacklistToken } from '../middleware/tokenBlacklist.js';
 
 class AuthController {
   async register(req, res) {
@@ -274,8 +275,10 @@ class AuthController {
 
   async logout(req, res) {
     try {
-      // In a production environment, you might want to invalidate the token
-      // by adding it to a blacklist or using Redis
+      // أضف الـ access token للقائمة السوداء فوراً — لن يُقبل في أي طلب لاحق
+      if (req.token && req.tokenDecoded?.exp) {
+        blacklistToken(req.token, req.tokenDecoded.exp);
+      }
 
       logger.info(`User logged out: ${req.user.email}`);
 

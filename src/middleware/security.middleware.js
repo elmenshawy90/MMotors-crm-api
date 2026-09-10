@@ -1,32 +1,49 @@
 import rateLimit from 'express-rate-limit';
 import config from '../config/index.js';
 
+// ─── Rate Limiters ───────────────────────────────────────────────────────────
+
+
 export const rateLimiter = rateLimit({
-  windowMs: config.security.rateLimitWindowMs,
-  max: config.security.rateLimitMaxRequests,
+  windowMs: config.security.rateLimitWindowMs,       
+  max: config.security.rateLimitMaxRequests,          
   message: { success: false, message: 'Too many requests, please try again later' },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip
 });
+
 
 export const authRateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 5,
   message: { success: false, message: 'Too many authentication attempts, please try again later' },
-  skipSuccessfulRequests: true
+  skipSuccessfulRequests: true,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip
 });
 
+/**
+ * API limiter upload
+ */
 export const apiRateLimiter = rateLimit({
   windowMs: 60 * 1000,
-  max: 100,
-  message: { success: false, message: 'API rate limit exceeded' }
+  max: 60,
+  message: { success: false, message: 'API rate limit exceeded' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => req.ip
 });
+
+// ─── Request Validation ───────────────────────────────────────────────────────
 
 export const validateRequest = (req, res, next) => {
   const contentType = req.headers['content-type'];
 
   if (req.method !== 'GET' && req.method !== 'DELETE') {
-    if (!contentType || !contentType.includes('application/json')) {
+    const isMultipart = contentType && contentType.includes('multipart/form-data');
+    if (!isMultipart && (!contentType || !contentType.includes('application/json'))) {
       return res.status(415).json({
         success: false,
         message: 'Content-Type must be application/json'
@@ -37,18 +54,16 @@ export const validateRequest = (req, res, next) => {
   next();
 };
 
-// Strip dangerous characters and enforce sane field length
+// ─── Input Sanitization ───────────────────────────────────────────────────────
+
 const MAX_STRING_LENGTH = 10000;
 
 const sanitizeValue = (value, depth = 0) => {
-  if (depth > 10) return value; // prevent deep recursion on adversarial payloads
+  if (depth > 10) return value;
 
   if (typeof value === 'string') {
-    // Truncate excessively long strings
     let v = value.length > MAX_STRING_LENGTH ? value.slice(0, MAX_STRING_LENGTH) : value;
-    // Strip null bytes
     v = v.replace(/\0/g, '');
-    // Strip basic JS prototype pollution keys
     return v;
   }
 
@@ -59,7 +74,6 @@ const sanitizeValue = (value, depth = 0) => {
   if (typeof value === 'object' && value !== null) {
     const sanitized = {};
     for (const key of Object.keys(value)) {
-      // Block prototype pollution
       if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
       sanitized[key] = sanitizeValue(value[key], depth + 1);
     }

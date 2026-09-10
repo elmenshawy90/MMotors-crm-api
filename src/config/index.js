@@ -26,14 +26,15 @@ export const config = {
   
   security: {
     bcryptRounds: parseInt(process.env.BCRYPT_ROUNDS, 10) || 12,
-    rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 900000,
-    rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || 1000
+    rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS, 10) || 900000, 
+    rateLimitMaxRequests: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS, 10) || 300, 
+    apiKey: process.env.API_KEY || ''
   },
   
   cors: {
     origin: process.env.CORS_ORIGIN 
-      ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
-      : ['https://crm.modernmotorseg.com', 'https://api.al-brisha.com', 'http://localhost:5173', 'http://localhost:8080']
+      ? process.env.CORS_ORIGIN.split(',') 
+      : ['https://crm.modernmotorseg.com','https://crm-api.modernmotorseg.com','http://localhost:5173']
   },
   
   logging: {

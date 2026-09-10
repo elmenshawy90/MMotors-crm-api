@@ -126,16 +126,12 @@ const defineAssociations = () => {
 
 const initializeDatabase = async () => {
   try {
-    // Test connection
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
 
-    // Define associations
     defineAssociations();
 
-    // Sync models (create tables if they don't exist)
-    await sequelize.sync({ alter: process.env.NODE_ENV === 'development' });
-    console.log('Database synchronized successfully.');
+    console.log('Database initialized (schema managed via migrations).');
 
     return sequelize;
   } catch (error) {

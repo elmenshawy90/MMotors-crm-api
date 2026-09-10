@@ -11,7 +11,19 @@ import logger from '../utils/logger.js';
 class ContactController {
   async getAllContacts(req, res) {
     try {
-      const { branch_id, type, status, search, sort_by, loyalty_tier } = req.query;
+      const { 
+        branch_id, 
+        type, 
+        status, 
+        search, 
+        sort_by, 
+        loyalty_tier,
+        date_range,
+        custom_start_date,
+        custom_end_date,
+        year,
+        city
+      } = req.query;
       
       const where = {};
       
@@ -29,6 +41,58 @@ class ContactController {
 
       if (loyalty_tier) {
         where.loyalty_tier = loyalty_tier;
+      }
+
+      if (city && city !== 'all') {
+        where.city = city;
+      }
+      
+      // Date range filtering
+      if (date_range) {
+        const now = new Date();
+        let startDate, endDate;
+        
+        switch (date_range) {
+          case 'this_month':
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            break;
+          case 'last_month':
+            startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+            endDate = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
+            break;
+          case 'this_year':
+            startDate = new Date(now.getFullYear(), 0, 1);
+            endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+            break;
+          case 'last_year':
+            startDate = new Date(now.getFullYear() - 1, 0, 1);
+            endDate = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59, 999);
+            break;
+          case 'custom':
+            if (custom_start_date && custom_end_date) {
+              startDate = new Date(custom_start_date);
+              endDate = new Date(custom_end_date);
+              endDate.setHours(23, 59, 59, 999);
+            }
+            break;
+        }
+        
+        if (startDate && endDate) {
+          where.created_at = {
+            [Op.gte]: startDate,
+            [Op.lte]: endDate
+          };
+        }
+      }
+
+      // Year filtering
+      if (year && year !== 'all') {
+        const yearNum = parseInt(year);
+        where.created_at = {
+          [Op.gte]: new Date(yearNum, 0, 1),
+          [Op.lte]: new Date(yearNum, 11, 31, 23, 59, 59, 999)
+        };
       }
       
       if (search) {
@@ -60,7 +124,7 @@ class ContactController {
           {
             model: Branch,
             as: 'branch',
-            attributes: ['id', 'name', 'code']
+            attributes: ['id', 'name', 'code', 'city']
           },
           {
             model: User,

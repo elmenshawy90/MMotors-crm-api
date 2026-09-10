@@ -87,6 +87,81 @@ const PhoneCall = sequelize.define('PhoneCall', {
     allowNull: true,
     comment: 'Auto: +3 days from follow_up_date'
   },
+  // ── Extended CRM fields ───────────────────────────────────────────────────
+  call_type: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    comment: 'Phone Call Type e.g. Sales, Service, Complaint'
+  },
+  call_sub_type: {
+    type: DataTypes.STRING(100),
+    allowNull: true,
+    comment: 'Sub type of the call'
+  },
+  vehicle_id: {
+    type: DataTypes.UUID,
+    allowNull: true,
+    references: { model: 'vehicles', key: 'id' }
+  },
+  chassis_number: {
+    type: DataTypes.STRING(100),
+    allowNull: true
+  },
+  license_plate: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
+  contact_mobile: {
+    type: DataTypes.STRING(20),
+    allowNull: true
+  },
+  in_regard_to: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  regard_to_detail: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  campaign: {
+    type: DataTypes.STRING(200),
+    allowNull: true
+  },
+  how_found_campaign: {
+    type: DataTypes.STRING(200),
+    allowNull: true
+  },
+  priority: {
+    type: DataTypes.ENUM('low', 'medium', 'high', 'urgent'),
+    allowNull: true,
+    defaultValue: 'medium'
+  },
+  vehicles_data: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: [],
+    comment: 'Array of {brand,model,model_year,chassis_number,license_plate,color_in,color_out,transmission,fuel_type}'
+  },
+  sales_information: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: {}
+  },
+  vehicle_questions: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: {}
+  },
+  call_summary: {
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
+  sent_messages: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    defaultValue: [],
+    comment: 'Log of sent messages / notes'
+  },
   recording_url: {
     type: DataTypes.STRING(500),
     allowNull: true

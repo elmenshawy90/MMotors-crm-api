@@ -4,10 +4,17 @@ import helmet from 'helmet';
 import compression from 'compression';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+
 import config from './config/index.js';
 import logger from './utils/logger.js';
 import { errorHandler, notFoundHandler } from './middleware/error.middleware.js';
-import { rateLimiter, validateRequest, sanitizeInput } from './middleware/security.middleware.js';
+import { rateLimiter, apiRateLimiter, validateRequest, sanitizeInput } from './middleware/security.middleware.js';
+import { requireApiKey } from './middleware/apiKey.middleware.js';
+import { requestInspector } from './middleware/requestInspector.middleware.js';
+import { staticAuthGuard } from './middleware/staticAuth.middleware.js';
 
 // Import routes
 import initializeDatabase from './database/index.js';
@@ -32,56 +39,100 @@ import knowledgeRoutes from './routes/knowledge.routes.js';
 import leadRoutes from './routes/lead.routes.js';
 import systemRoutes from './routes/system.routes.js';
 import uploadRoutes from './routes/upload.routes.js';
-import { createRequire } from 'module';
+
 const require = createRequire(import.meta.url);
-import path from 'path';
-import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 dotenv.config();
 
 const app = express();
 
-// Security middleware
+
+//  1 — HTTP Security Headers (Helmet)
+
 app.use(helmet({
-  contentSecurityPolicy: false,
-  crossOriginEmbedderPolicy: false
+  // Content Security Policy 
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc:     ["'none'"],
+      scriptSrc:      ["'none'"],
+      styleSrc:       ["'none'"],
+      imgSrc:         ["'none'"],
+      connectSrc:     ["'none'"],
+      fontSrc:        ["'none'"],
+      objectSrc:      ["'none'"],
+      mediaSrc:       ["'none'"],
+      frameSrc:       ["'none'"],
+    }
+  },
+  // HTTP Strict Transport Security —  HTTPS  
+  hsts: {
+    maxAge: 31536000,        
+    includeSubDomains: true,
+    preload: true
+  },
+  noSniff: true,
+  // iframe (clickjacking)
+  frameguard: { action: 'deny' },
+  // X-Powered-By
+  hidePoweredBy: true,
+  // cache 
+  crossOriginResourcePolicy: { policy: 'same-origin' },
+  crossOriginEmbedderPolicy: false  
 }));
 
-// CORS configuration
+
+//  2 — CORS 
+
 app.use(cors({
   origin: config.cors.origin,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key']
 }));
 
-// Compression
-app.use(compression());
 
-// Body parsing middleware
+//  3 — API Key 
+//    /api/* X-API-Key 
+
+app.use('/api/', requireApiKey);
+
+
+//  4 — Rate Limiting (   brute-force , scraping)
+
+app.use('/api/', rateLimiter);
+
+
+// Body parsing + Compression
+
+app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Request validation and sanitization
+
+// طبقة 5 — Input Validation & Sanitization
+
 app.use(validateRequest);
 app.use(sanitizeInput);
 
-// Rate limiting
-app.use('/api/', rateLimiter);
+
+// طبقة 6 — Request Inspector (كشف SQL injection, XSS, path traversal)
+
+app.use('/api/', requestInspector);
+
 
 // Logging
+
 if (config.env === 'development') {
   app.use(morgan('dev'));
 } else {
   app.use(morgan('combined', {
-    stream: {
-      write: (message) => logger.info(message.trim())
-    }
+    stream: { write: (message) => logger.info(message.trim()) }
   }));
 }
 
-// Health check endpoint
+
+// Health check 
 app.get('/health', (req, res) => {
   res.json({
     success: true,
@@ -91,46 +142,52 @@ app.get('/health', (req, res) => {
   });
 });
 
-// API routes
-app.use('/api/auth', authRoutes);
-app.use('/api/settings', settingRoutes);
-app.use('/api/branches', branchRoutes);
-app.use('/api/vehicles', vehicleRoutes);
-app.use('/api/appointments', appointmentRoutes);
-app.use('/api/contacts', contactRoutes);
-app.use('/api/phone-calls', phoneCallRoutes);
-app.use('/api/helpdesk', helpdeskRoutes);
-app.use('/api/companies', companyRoutes);
-app.use('/api/stations', stationRoutes);
-app.use('/api/employees', employeeRoutes);
+
+// API Routes
+
+app.use('/api/auth',              authRoutes);
+app.use('/api/settings',          settingRoutes);
+app.use('/api/branches',          branchRoutes);
+app.use('/api/vehicles',          vehicleRoutes);
+app.use('/api/appointments',      appointmentRoutes);
+app.use('/api/contacts',          contactRoutes);
+app.use('/api/phone-calls',       phoneCallRoutes);
+app.use('/api/helpdesk',          helpdeskRoutes);
+app.use('/api/companies',         companyRoutes);
+app.use('/api/stations',          stationRoutes);
+app.use('/api/employees',         employeeRoutes);
 app.use('/api/warranty-packages', warrantyPackageRoutes);
-app.use('/api/mail-groups', mailGroupRoutes);
-app.use('/api/definitions', definitionRoutes);
-app.use('/api/roles', roleRoutes);
-app.use('/api/permissions', permissionRoutes);
-app.use('/api/page-access', pageAccessRoutes);
-app.use('/api/knowledge', knowledgeRoutes);
-app.use('/api/leads', leadRoutes);
-app.use('/api/system', systemRoutes);
-app.use('/api/upload', uploadRoutes);
+app.use('/api/mail-groups',       mailGroupRoutes);
+app.use('/api/definitions',       definitionRoutes);
+app.use('/api/roles',             roleRoutes);
+app.use('/api/permissions',       permissionRoutes);
+app.use('/api/page-access',       pageAccessRoutes);
+app.use('/api/knowledge',         knowledgeRoutes);
+app.use('/api/leads',             leadRoutes);
+app.use('/api/system',            systemRoutes);
+app.use('/api/upload',            apiRateLimiter, uploadRoutes);
 
-// Serve uploaded files as static
-app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
 
-// 404 handler
+//  7 — Static Files , Authentication Guard
+//   WT 
+
+app.use('/uploads', staticAuthGuard, express.static(path.resolve(__dirname, '../uploads')));
+
+
+// Error Handlers
+
 app.use(notFoundHandler);
-
-// Global error handler
 app.use(errorHandler);
+
+
+// Server Startup
 
 const PORT = config.port;
 const HOST = config.host;
 
 const startServer = async () => {
   try {
-    // Initialize database and define all model associations before handling requests
     await initializeDatabase();
-
     app.listen(PORT, HOST, () => {
       logger.info(`Server is running on http://${HOST}:${PORT}`);
       logger.info(`Environment: ${config.env}`);
@@ -142,12 +199,10 @@ const startServer = async () => {
   }
 };
 
-// Handle unhandled promise rejections
 process.on('unhandledRejection', (reason, promise) => {
   logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-// Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
   logger.error('Uncaught Exception:', error);
   process.exit(1);
@@ -156,5 +211,4 @@ process.on('uncaughtException', (error) => {
 export default app;
 export { startServer };
 
-// Start server if this file is run directly
 startServer();

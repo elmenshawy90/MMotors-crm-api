@@ -3,6 +3,7 @@ import Branch from '../models/Branch.js';
 import Vehicle from '../models/Vehicle.js';
 import Contact from '../models/Contact.js';
 import User from '../models/User.js';
+import Company from '../models/Company.js';
 import { Op } from 'sequelize';
 import logger from '../utils/logger.js';
 
@@ -58,7 +59,14 @@ class AppointmentController {
           {
             model: Branch,
             as: 'branch',
-            attributes: ['id', 'name', 'code']
+            attributes: ['id', 'name', 'code'],
+            include: [
+              {
+                model: Company,
+                as: 'company',
+                attributes: ['id', 'name', 'code']
+              }
+            ]
           },
           {
             model: Vehicle,
@@ -99,7 +107,14 @@ class AppointmentController {
           {
             model: Branch,
             as: 'branch',
-            attributes: ['id', 'name', 'code', 'address', 'phone']
+            attributes: ['id', 'name', 'code', 'address', 'phone'],
+            include: [
+              {
+                model: Company,
+                as: 'company',
+                attributes: ['id', 'name', 'code']
+              }
+            ]
           },
           {
             model: Vehicle,
@@ -148,7 +163,14 @@ class AppointmentController {
           {
             model: Branch,
             as: 'branch',
-            attributes: ['id', 'name', 'code']
+            attributes: ['id', 'name', 'code'],
+            include: [
+              {
+                model: Company,
+                as: 'company',
+                attributes: ['id', 'name', 'code']
+              }
+            ]
           },
           {
             model: Vehicle,
@@ -197,7 +219,14 @@ class AppointmentController {
           {
             model: Branch,
             as: 'branch',
-            attributes: ['id', 'name', 'code']
+            attributes: ['id', 'name', 'code'],
+            include: [
+              {
+                model: Company,
+                as: 'company',
+                attributes: ['id', 'name', 'code']
+              }
+            ]
           },
           {
             model: Vehicle,
